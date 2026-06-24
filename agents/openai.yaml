@@ -1,0 +1,4 @@
+interface:
+  display_name: "Longform Report (tự nghiên cứu)"
+  short_description: "Báo cáo article HTML dài (15-40 chương, Chart.js + minimap + trình chiếu)"
+  default_prompt: "Viết báo cáo longform cho chủ đề [TOPIC] với [N] chương"

@@ -249,12 +249,29 @@ Bước 1: Outline + theme
 Bước 2: Copy template + fill hero
 Bước 3: Viết các section
 Bước 4: Tài liệu tham khảo + minimap
-► Bước 4.5: Fact-check số liệu (file này) ◄  ← MỚI
-Bước 5: Verify kỹ thuật (JS parse, Playwright)
+► Bước 5: Fact-check số liệu (file này) ◄
+► Bước 5b: Fact-check lý thuyết học thuật (academic_foundations.md) ◄  ← song song
+Bước 6: Verify kỹ thuật (JS parse, Playwright)
 ```
 
-**Khi nào BẮT BUỘC chạy Bước 4.5:**
+**Khi nào BẮT BUỘC chạy Bước 5:**
 - Bài có **≥10 con số** (ngày/tỷ lệ/số tiền).
 - Bài về **chính sách pháp luật** (ngày hiệu lực, Điều khoản — sai là nghiêm trọng).
 - Bài **kêu gọi người đọc đối chiếu báo cáo CK** (phải chính xác hơn bài thông thường).
 - User đặt **câu hỏi về 1 con số cụ thể** (dấu hiệu nên rà toàn bộ).
+
+## Phối hợp với Bước 5b — Fact-check lý thuyết học thuật
+
+File này lo **trục "số liệu thật"**. Trục thứ hai **"học thuật thật"** (lý thuyết tâm lý học hành vi / tài chính hành vi / kinh tế học) nằm ở `academic_foundations.md`. Chạy **song song** — không thay thế nhau.
+
+| Trục | File | Đối tượng |
+|---|---|---|
+| **Số liệu thật** | `fact_check.md` (file này) | con số, ngày, tỷ lệ, Điều luật, chỉ số BCTC |
+| **Học thuật thật** | `academic_foundations.md` | tên lý thuyết, tác giả, năm tác phẩm, số liệu minh họa lý thuyết |
+
+**Phân công rõ:**
+- "Loss aversion ~2:1" → số liệu minh họa lý thuyết → **Bước 5b** (`academic_foundations.md`), KHÔNG phải Bước 5 (vì không phải số liệu thị trường).
+- "NĐ 245/2025 hiệu lực 11/09/2025" → ngày pháp lý → **Bước 5** (file này).
+- "Kahneman nhận Nobel 2002" → năm sự kiện học thuật → **Bước 5b** (dễ nhầm với năm sách 2011).
+
+> ⚠️ Bẫy giao thoa: số liệu minh họa lý thuyết (vd "System 1 ~96% quyết định", "loss aversion 2:1") trông như số liệu nhưng bản chất là claim học thuật → verify từ **nguồn lý thuyết gốc**, không phải từ báo thị trường. Xem `academic_foundations.md` "Bẫy 2 — Sai số liệu minh họa".

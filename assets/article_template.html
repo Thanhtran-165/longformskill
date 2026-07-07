@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  LONGFORM REPORT — Article Template (CORE components only)
+  ============================================================================
+  Skill: longform-report
+  Source pattern: bdong-tien / ttck-trung-quoc / bao-cao-bds-trung-quoc
+
+  CÁCH DÙNG:
+  1. Copy file này vào {project}/{slug}/index.html
+  2. Replace mọi placeholder TOKEN (viết hoa UPPER_SNAKE, bọc trong 2 ngoặc nhọn)
+     bằng nội dung thật — xem references/components.md cho danh sách TOKEN đầy đủ
+     + recipe component nâng cao.
+  3. Duplicate <section> block cho mỗi chương. Cập nhật minimap groups.
+  4. Verify: grep "{{[A-Z_]*}}" phải trả 0; node scripts/qa_article.js.
+
+  THEME FAMILY (chọn 1):
+  - AMBER (mặc định): num badge gradient + kpi glow — bài tự nghiên cứu/nhân quả.
+  - BLUE: đổi `.num` background → var(--blue) phẳng, `.kpi` nền phẳng (xem references/themes.md).
+
+  HERO GRADIENT MOOD: đổi 1 dòng `.hero{background:linear-gradient(...)}` theo chủ đề
+  (xem references/themes.md cho bảng mood: BĐS-nóng, TQ-cyan, giáo dục-rêu, tài chính-nâu đất).
+  ============================================================================
+-->
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{HERO_TITLE}}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f172a; --bg2:#1e293b; --card:#1e293b; --card2:#273449;
+    --txt:#e2e8f0; --muted:#94a3b8; --line:#334155;
+    --red:#ef4444; --amber:#f59e0b; --green:#22c55e; --blue:#3b82f6; --violet:#8b5cf6; --cyan:#06b6d4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.8;font-size:17px}
+
+  /* ===== HERO (mood gradient — đổi dòng này theo chủ đề, xem references/themes.md) ===== */
+  .hero{background:linear-gradient(135deg,#422006 0%,#1e3a8a 50%,#312e81 100%);padding:90px 24px 70px;text-align:center;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.08),transparent 40%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.06),transparent 40%);pointer-events:none}
+  .hero .badge{display:inline-block;background:rgba(255,255,255,.12);padding:6px 16px;border-radius:999px;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:#fde68a;margin-bottom:20px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.2)}
+  .hero h1{font-size:clamp(1.9rem,4.5vw,3.2rem);font-weight:800;line-height:1.2;max-width:960px;margin:0 auto 18px}
+  .hero p.sub{color:#e2e8f0;font-size:1.12rem;max-width:800px;margin:0 auto;opacity:.92}
+  .hero .meta{margin-top:28px;color:#cbd5e1;font-size:.9rem}
+  .hero .meta span{display:inline-block;margin:0 10px}
+
+  /* ===== LAYOUT ===== */
+  .container{max-width:800px;margin:0 auto;padding:0 24px}
+  main{padding:50px 0 80px}
+  section{margin-bottom:56px;scroll-margin-top:90px}
+
+  /* ===== TYPOGRAPHY & SECTION TITLE ===== */
+  h2.section-title{font-size:1.5rem;font-weight:700;margin-bottom:14px;padding-bottom:16px;border-bottom:1px solid transparent;border-image:linear-gradient(90deg,var(--amber),rgba(245,158,11,.2),transparent) 1;display:flex;align-items:center;gap:14px}
+  h2.section-title .num{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--amber),#d97706);color:#fff;font-size:.95rem;font-weight:800;flex-shrink:0;box-shadow:0 4px 12px rgba(245,158,11,.3),inset 0 1px 0 rgba(255,255,255,.2)}
+  h3{font-size:1.18rem;margin:28px 0 10px;color:#fbbf24;display:flex;align-items:center;gap:8px}
+  h4{font-size:1.05rem;margin:18px 0 8px;color:#fff}
+  p{margin-bottom:16px;color:#cbd5e1}
+  strong{color:#fff}
+  em{color:#fcd34d;font-style:normal}
+  ul.bul{margin:12px 0 18px 4px;padding-left:22px}
+  ul.bul li{margin-bottom:8px;color:#cbd5e1;position:relative;padding-left:4px}
+  ul.bul li::marker{color:var(--amber)}
+  ol.numlist{margin:12px 0 18px 4px;padding-left:22px}
+  ol.numlist li{margin-bottom:8px;color:#cbd5e1}
+  a.src{color:var(--blue);text-decoration:none;border-bottom:1px dotted var(--blue)}
+
+  /* ===== INLINE CITATION + REFS LIST (chế độ numerated) ===== */
+  .ref{display:inline-block;font-size:.65rem;font-weight:700;color:#fbbf24;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:4px;padding:0 4px;margin:0 1px;line-height:1.4;vertical-align:super;text-decoration:none;transition:.15s;min-width:16px;text-align:center}
+  .ref:hover{background:rgba(251,191,36,.3);color:#fde68a;transform:translateY(-1px)}
+  ol.refs{list-style:none;counter-reset:ref;padding-left:0;margin:18px 0}
+  ol.refs li{counter-increment:ref;display:flex;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:.86rem;line-height:1.55;align-items:flex-start}
+  ol.refs li:last-child{border-bottom:none}
+  ol.refs li::before{content:counter(ref);display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,var(--amber),#d97706);color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0;margin-top:1px}
+  ol.refs li a{color:#93c5fd;text-decoration:none;border-bottom:1px dotted #93c5fd;word-break:break-all}
+  ol.refs li a:hover{color:#fbbf24;border-bottom-color:#fbbf24}
+  ol.refs li .src-meta{color:var(--muted);font-size:.78rem;display:block;margin-top:3px}
+
+  /* ===== KPI / STAT CARDS ===== */
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:22px 0}
+  .kpi{background:linear-gradient(180deg,rgba(245,158,11,.06),rgba(30,41,59,.6));border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:20px 18px;transition:.22s;position:relative;overflow:hidden}
+  .kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),transparent)}
+  .kpi:hover{transform:translateY(-3px);border-color:var(--amber);box-shadow:0 8px 24px rgba(245,158,11,.15)}
+  .kpi .val{font-size:1.85rem;font-weight:800;color:#fbbf24;line-height:1;text-shadow:0 0 24px rgba(245,158,11,.3)}
+  .kpi .lab{font-size:.82rem;color:var(--muted);margin-top:10px;line-height:1.4}
+  .kpi.red{border-color:rgba(239,68,68,.3);background:linear-gradient(180deg,rgba(239,68,68,.06),rgba(30,41,59,.6))}.kpi.red::before{background:linear-gradient(90deg,var(--red),transparent)}.kpi.red:hover{border-color:var(--red);box-shadow:0 8px 24px rgba(239,68,68,.15)}
+  .kpi.green{border-color:rgba(34,197,94,.3);background:linear-gradient(180deg,rgba(34,197,94,.06),rgba(30,41,59,.6))}.kpi.green::before{background:linear-gradient(90deg,var(--green),transparent)}.kpi.green:hover{border-color:var(--green);box-shadow:0 8px 24px rgba(34,197,94,.15)}
+  .kpi.cyan{border-color:rgba(6,182,212,.3);background:linear-gradient(180deg,rgba(6,182,212,.06),rgba(30,41,59,.6))}.kpi.cyan::before{background:linear-gradient(90deg,var(--cyan),transparent)}.kpi.cyan:hover{border-color:var(--cyan);box-shadow:0 8px 24px rgba(6,182,212,.15)}
+  .kpi.violet{border-color:rgba(139,92,246,.3);background:linear-gradient(180deg,rgba(139,92,246,.06),rgba(30,41,59,.6))}.kpi.violet::before{background:linear-gradient(90deg,var(--violet),transparent)}.kpi.violet:hover{border-color:var(--violet);box-shadow:0 8px 24px rgba(139,92,246,.15)}
+  .kpi.red .val{color:var(--red);text-shadow:0 0 24px rgba(239,68,68,.3)} .kpi.green .val{color:var(--green);text-shadow:0 0 24px rgba(34,197,94,.3)} .kpi.cyan .val{color:var(--cyan);text-shadow:0 0 24px rgba(6,182,212,.3)} .kpi.violet .val{color:var(--violet);text-shadow:0 0 24px rgba(139,92,246,.3)}
+
+  /* ===== COMPARE (before/after 2 cột) ===== */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:24px 0}
+  .compare .col{border-radius:14px;padding:0;border:1px solid var(--line);overflow:hidden;transition:.22s}
+  .compare .col:hover{transform:translateY(-2px)}
+  .compare .col h4{margin:0;padding:16px 22px 12px;font-size:1.05rem;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06)}
+  .compare .col ul.bul{padding:14px 22px 20px;margin:0}
+  .compare .before{background:linear-gradient(180deg,rgba(6,182,212,.10),rgba(6,182,212,.02));border-color:rgba(6,182,212,.35)}
+  .compare .before h4{background:linear-gradient(180deg,rgba(6,182,212,.12),transparent)}
+  .compare .after{background:linear-gradient(180deg,rgba(245,158,11,.10),rgba(245,158,11,.02));border-color:rgba(245,158,212,.35)}
+  .compare .after h4{background:linear-gradient(180deg,rgba(245,158,11,.12),transparent)}
+  .compare .tag{display:inline-block;font-size:.7rem;padding:3px 12px;border-radius:999px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-left:auto}
+  .compare .before .tag{background:linear-gradient(135deg,var(--cyan),#0891b2);color:#062b33;box-shadow:0 2px 8px rgba(6,182,212,.3)}
+  .compare .after .tag{background:linear-gradient(135deg,var(--amber),#d97706);color:#3a2400;box-shadow:0 2px 8px rgba(245,158,11,.3)}
+  @media(max-width:720px){.compare{grid-template-columns:1fr}}
+
+  /* ===== TABLE ===== */
+  table.tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:.92rem;background:var(--card);border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  table.tbl th,table.tbl td{padding:13px 16px;text-align:left;border-bottom:1px solid var(--line)}
+  table.tbl thead th{background:linear-gradient(180deg,rgba(245,158,11,.16),rgba(245,158,11,.06));color:#fbbf24;font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid rgba(245,158,11,.3);position:relative}
+  table.tbl thead th::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--amber);opacity:0;transition:.2s}
+  table.tbl thead th:first-child::before{opacity:1}
+  table.tbl tbody tr{transition:.15s}
+  table.tbl tbody tr:nth-child(even) td{background:rgba(255,255,255,.015)}
+  table.tbl tbody tr:hover td{background:rgba(245,158,11,.06)}
+  table.tbl tr:last-child td{border-bottom:none}
+  table.tbl td strong{color:#fcd34d}
+
+  /* ===== CALLOUT (info box) ===== */
+  .callout{position:relative;background:linear-gradient(135deg,rgba(139,92,246,.10),rgba(59,130,246,.05));border:1px solid rgba(139,92,246,.25);border-left:4px solid var(--violet);padding:18px 22px 18px 24px;border-radius:0 14px 14px 0;margin:22px 0;transition:.2s}
+  .callout:hover{box-shadow:0 4px 18px rgba(139,92,246,.12);transform:translateX(2px)}
+  .callout.warn{border-color:rgba(239,68,68,.25);border-left-color:var(--red);background:linear-gradient(135deg,rgba(239,68,68,.10),rgba(239,68,68,.03))}
+  .callout.warn:hover{box-shadow:0 4px 18px rgba(239,68,68,.12)}
+  .callout.good{border-color:rgba(34,197,94,.25);border-left-color:var(--green);background:linear-gradient(135deg,rgba(34,197,94,.10),rgba(34,197,94,.03))}
+  .callout.good:hover{box-shadow:0 4px 18px rgba(34,197,94,.12)}
+  .callout.info{border-color:rgba(59,130,246,.25);border-left-color:var(--blue);background:linear-gradient(135deg,rgba(59,130,246,.10),rgba(59,130,246,.03))}
+  .callout.info:hover{box-shadow:0 4px 18px rgba(59,130,246,.12)}
+  .callout h4{color:#fff;margin-bottom:6px;font-size:1rem;display:flex;align-items:center;gap:8px}
+  .callout p{margin:0;color:#e2e8f0}
+
+  /* ===== CHART CONTAINER ===== */
+  .chart-box{background:linear-gradient(180deg,var(--card),rgba(15,23,42,.6));border:1px solid var(--line);border-radius:16px;padding:22px;margin:24px 0;position:relative;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  .chart-box::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--amber),var(--blue),transparent)}
+  .chart-box h4{color:#fbbf24;margin-bottom:6px;font-size:1rem;display:flex;align-items:center;gap:8px}
+  .chart-box .desc{color:var(--muted);font-size:.85rem;margin-bottom:16px;padding-left:10px;border-left:2px solid rgba(245,158,11,.3);font-style:italic}
+  .chart-wrap{position:relative;height:320px}
+  .chart-wrap.tall{height:380px}
+
+  /* ===== TIMELINE ===== */
+  .timeline{position:relative;margin:26px 0;padding-left:32px;border-left:2px solid transparent;border-image:linear-gradient(180deg,var(--amber),var(--line)) 1}
+  .tl-item{position:relative;margin-bottom:28px}
+  .tl-item::before{content:"";position:absolute;left:-41px;top:4px;width:16px;height:16px;border-radius:50%;background:var(--amber);border:3px solid var(--bg);box-shadow:0 0 0 2px var(--amber),0 0 14px rgba(245,158,11,.5)}
+  .tl-item.red::before{background:var(--red);box-shadow:0 0 0 2px var(--red),0 0 14px rgba(239,68,68,.5)}
+  .tl-item.green::before{background:var(--green);box-shadow:0 0 0 2px var(--green),0 0 14px rgba(34,197,94,.5)}
+  .tl-year{font-weight:800;color:#fbbf24;font-size:.95rem;letter-spacing:.02em}
+  .tl-body{color:#cbd5e1;margin-top:4px}
+
+  /* ===== LAYOUT HELPERS ===== */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+  @media(max-width:720px){.two-col{grid-template-columns:1fr}}
+
+  footer{text-align:center;padding:30px 24px;color:var(--muted);font-size:.85rem;border-top:1px solid var(--line)}
+
+  /* ===== PROGRESS BAR (top) ===== */
+  .progress-bar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,#fbbf24,#f59e0b,#ef4444);z-index:1000;transition:width .12s ease-out}
+
+  /* ===== MINIMAP (floating TOC) ===== */
+  .minimap{position:fixed;top:24px;right:24px;width:272px;max-height:calc(100vh - 48px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 14px;overflow-y:auto;z-index:50;opacity:0;transform:translateX(20px);pointer-events:none;transition:opacity .35s ease, transform .35s ease;box-shadow:0 12px 40px rgba(0,0,0,.35);display:none}
+  @media(min-width:1024px){body.nav-active .minimap{display:block;opacity:1;transform:translateX(0);pointer-events:auto}}
+  .minimap::-webkit-scrollbar{width:6px}.minimap::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .minimap .mm-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 4px}
+  .minimap .mm-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
+  .minimap .mm-pct{font-size:.72rem;color:#fbbf24;font-weight:700}
+  .mm-search{position:relative;margin-bottom:12px}
+  .mm-search input{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;color:var(--txt);padding:8px 10px 8px 30px;font-size:.82rem;outline:none;transition:.2s}
+  .mm-search input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+  .mm-search input::placeholder{color:var(--muted)}
+  .mm-search::before{content:"🔍";position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:.75rem;opacity:.7}
+  .mm-group{margin-bottom:4px;border-radius:9px;overflow:hidden}
+  .mm-group-head{display:flex;align-items:center;gap:7px;width:100%;background:transparent;border:none;color:#cbd5e1;cursor:pointer;padding:8px 8px;font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;text-align:left;border-radius:8px;transition:.15s}
+  .mm-group-head:hover{background:rgba(255,255,255,.04);color:#fff}
+  .mm-group-head .chev{font-size:.65rem;transition:transform .2s;color:var(--muted);width:10px}
+  .mm-group.open .mm-group-head .chev{transform:rotate(90deg)}
+  .mm-group-head .gcount{margin-left:auto;font-size:.66rem;color:var(--muted);font-weight:600;background:var(--bg2);padding:1px 7px;border-radius:999px}
+  .mm-items{list-style:none;padding:2px 0 6px 14px;margin:0;max-height:0;overflow:hidden;transition:max-height .3s ease;border-left:1px solid var(--line);margin-left:8px}
+  .mm-group.open .mm-items{max-height:500px}
+  .mm-items li{margin:0}
+  .mm-items a{display:flex;align-items:center;gap:7px;text-decoration:none;color:var(--muted);font-size:.8rem;padding:5px 8px;border-radius:6px;transition:.15s;line-height:1.3}
+  .mm-items a:hover{color:#fbbf24;background:rgba(255,255,255,.03)}
+  .mm-items a .dot{width:6px;height:6px;border-radius:50%;background:var(--line);flex-shrink:0;transition:.2s}
+  .mm-items a.active{color:#fbbf24;font-weight:600;background:rgba(251,191,36,.08)}
+  .mm-items a.active .dot{background:#fbbf24;box-shadow:0 0 0 3px rgba(251,191,36,.2)}
+  .mm-no-result{display:none;font-size:.78rem;color:var(--muted);font-style:italic;padding:14px 8px;text-align:center}
+  .minimap.searching .mm-no-result.show{display:block}
+
+  /* ===== FLOATING BUTTONS ===== */
+  .mm-fab{display:none;position:fixed;bottom:24px;right:24px;z-index:200;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:1.3rem;box-shadow:0 8px 24px rgba(239,68,68,.4);align-items:center;justify-content:center}
+  @media(max-width:1023px){.mm-fab{display:flex}.minimap{display:none;top:0;right:0;left:0;bottom:0;width:auto;max-height:none;border-radius:0;border:none;transform:translateY(20px)}body.nav-mobile-open .minimap{display:block;opacity:1;transform:translateY(0);pointer-events:auto}body.nav-mobile-open .mm-fab{display:none}}
+  .mm-overlay-close{display:none;position:absolute;top:14px;right:16px;font-size:1.6rem;background:none;border:none;color:var(--muted);cursor:pointer;line-height:1}
+  @media(max-width:1023px){.mm-overlay-close{display:block}}
+  .to-top{position:fixed;bottom:24px;left:24px;z-index:200;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--txt);cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(10px);pointer-events:none;transition:.25s}
+  body.nav-active .to-top.show,body.loaded .to-top.show{opacity:1;transform:translateY(0);pointer-events:auto}
+  .to-top:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+  @media(max-width:1023px){.to-top{bottom:88px}}
+  .pres-btn{position:fixed;top:24px;left:24px;z-index:300;width:48px;height:48px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;cursor:pointer;font-size:1.3rem;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(59,130,246,.4);opacity:0;transform:translateY(-10px);pointer-events:none;transition:.3s}
+  body.nav-active .pres-btn,body.loaded .pres-btn{opacity:1;transform:translateY(0);pointer-events:auto}
+  .pres-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 10px 28px rgba(139,92,246,.5)}
+
+  /* ===== PRESENTATION MODE OVERLAY ===== */
+  .pres-overlay{position:fixed;inset:0;z-index:9999;background:#0a0f1d;display:flex;flex-direction:column;height:100vh;height:100dvh;opacity:0;pointer-events:none;transition:opacity .4s ease}
+  .pres-overlay.active{opacity:1;pointer-events:auto}
+  .pres-top{display:flex;align-items:center;gap:16px;padding:14px 28px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+  .pres-progress-bg{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+  .pres-progress-fill{height:100%;width:0;background:linear-gradient(90deg,#3b82f6,#fbbf24,#ef4444);border-radius:2px;transition:width .4s ease}
+  .pres-counter{font-size:.85rem;color:#94a3b8;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .pres-counter b{color:#fbbf24;font-size:1.05rem}
+  .pres-exit{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:7px 16px;border-radius:8px;cursor:pointer;font-size:.82rem;transition:.2s}
+  .pres-exit:hover{background:rgba(239,68,68,.3);color:#fff}
+  .pres-stage{flex:1 1 auto;position:relative;overflow:hidden;min-height:0;width:100%}
+  .pres-slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 7%;text-align:center;opacity:0;transform:translateX(60px) scale(.97);transition:opacity .5s ease, transform .5s cubic-bezier(.22,1,.36,1);pointer-events:none}
+  .pres-slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
+  .pres-slide.prev{transform:translateX(-60px) scale(.97)}
+  .pres-slide .slide-inner{width:100%;max-width:1100px;margin:auto}
+  .slide-title .badge{display:inline-block;background:rgba(255,255,255,.1);padding:6px 18px;border-radius:999px;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:#fde68a;margin-bottom:22px;border:1px solid rgba(255,255,255,.18)}
+  .slide-title h1{font-size:clamp(2rem,5.5vw,4rem);font-weight:800;line-height:1.1;margin:0 0 18px;background:linear-gradient(135deg,#fff,#fde68a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .slide-title .sub{font-size:clamp(1rem,2vw,1.35rem);color:#cbd5e1;max-width:760px;margin:0 auto 24px}
+  .slide-section{background:radial-gradient(circle at 50% 40%,rgba(245,158,11,.12),transparent 60%)}
+  .slide-section .sec-num{font-size:clamp(4rem,12vw,8rem);font-weight:800;line-height:1;color:rgba(255,255,255,.08);margin-bottom:0}
+  .slide-section .sec-label{font-size:.8rem;letter-spacing:.2em;text-transform:uppercase;color:#fbbf24;margin-bottom:8px}
+  .slide-section h2{font-size:clamp(1.8rem,4.5vw,3.2rem);font-weight:800;color:#fff;margin:8px 0 0;line-height:1.15}
+  .slide-content h2{font-size:clamp(1.5rem,3.2vw,2.3rem);font-weight:800;color:#fff;margin:0 0 6px;line-height:1.2}
+  .slide-content .kicker{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24;font-weight:700;margin-bottom:10px}
+  .slide-list ul{list-style:none;text-align:left;max-width:760px;margin:20px auto 0}
+  .slide-list li{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:clamp(1rem,1.8vw,1.18rem);color:#e2e8f0}
+  .slide-list li:last-child{border-bottom:none}
+  .slide-list li .num{flex-shrink:0;width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700}
+  .slide-list li .txt strong{color:#fbbf24}
+  .slide-quote{background:radial-gradient(circle at 50% 40%,rgba(245,158,11,.12),transparent 60%)}
+  .slide-quote .qmark{font-size:5rem;color:rgba(245,158,11,.3);line-height:.5;margin-bottom:10px}
+  .slide-quote .qtext{font-size:clamp(1.4rem,3vw,2.1rem);font-weight:700;color:#fff;line-height:1.35;max-width:880px;margin:0 auto 16px}
+  .slide-quote .qsource{font-size:.9rem;color:#94a3b8;margin-top:10px}
+  .pres-bottom{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px 28px;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+  .pres-nav{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.15rem;display:flex;align-items:center;justify-content:center;transition:.2s}
+  .pres-nav:hover:not(:disabled){background:var(--blue);border-color:var(--blue);transform:scale(1.1)}
+  .pres-nav:disabled{opacity:.3;cursor:not-allowed}
+  .pres-dots{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:65%}
+  .pres-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:.25s;border:none;padding:0}
+  .pres-dot:hover{background:rgba(255,255,255,.4)}
+  .pres-dot.active{background:#fbbf24;width:22px;border-radius:4px}
+  .pres-hint{font-size:.72rem;color:#64748b;text-align:center;padding:2px 0 6px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- ============================ HERO ============================ -->
+<header class="hero">
+  <span class="badge">{{BADGE}}</span>
+  <h1>{{HERO_TITLE}}</h1>
+  <p class="sub">{{HERO_SUB}}</p>
+  <div class="meta">
+    <span>🗓️ Cập nhật: {{UPDATE_DATE}}</span>
+    <span>📐 Phạm vi: {{META_SCOPE}}</span>
+    <span>📚 {{META_CHAPTERS}}</span>
+  </div>
+</header>
+
+<!-- ============================ MAIN ============================ -->
+<main class="container">
+
+  <!-- ===== SECTION MẪU 1: body với nhiều component ===== -->
+  <!-- Duplicate section này cho mỗi chương. Đổi id="..." + num badge + tiêu đề. -->
+  <section id="chuong-1">
+    <h2 class="section-title"><span class="num">I</span>{{SECTION_1_TITLE}}</h2>
+
+    <p>Đoạn mở đầu — giới thiệu vấn đề. Dùng <strong>strong</strong> cho emphasis, <em>em</em> cho highlight vàng (không in nghiêng). Viết theo tone <em>người kể chuyện số liệu, không cho ý kiến</em>.</p>
+
+    <!-- KPI GRID — số liệu nổi bật -->
+    <div class="kpi-grid">
+      <div class="kpi red"><div class="val">2,4%</div><div class="lab">Gross Yield tài sản A</div></div>
+      <div class="kpi green"><div class="val">6,0%</div><div class="lab">Gross Yield tài sản B</div></div>
+      <div class="kpi cyan"><div class="val">50 tỷ</div><div class="lab">Giá vốn tài sản A</div></div>
+      <div class="kpi violet"><div class="val">3 tỷ</div><div class="lab">Giá vốn tài sản B</div></div>
+    </div>
+
+    <!-- INLINE CITATION (chế độ numerated) — số tham chiếu trỏ về ol.refs cuối bài -->
+    <p>Yield tham chiếu thị trường HCM ~3,8%<sup class="ref">1</sup>, trong khi Bình Dương đạt 4,1–7,5%<sup class="ref">4</sup>. Sự chênh lệch này phản ánh quy mô tài sản chứ không phản ánh chất lượng đầu tư<sup class="ref">12</sup>.</p>
+
+    <!-- CHART BOX — bọc canvas Chart.js, xem references/chart_recipes.md -->
+    <div class="chart-box">
+      <h4>📊 So sánh: Tiền thuê vs Yield</h4>
+      <div class="desc">2 ví dụ thực tế — tài sản lớn yield thấp vs tài sản nhỏ yield cao.</div>
+      <div class="chart-wrap"><canvas id="chartCompare"></canvas></div>
+    </div>
+
+    <!-- COMPARE — before/after 2 cột -->
+    <div class="compare">
+      <div class="col before">
+        <h4>Tiền thuê tuyệt đối <span class="tag">Quy mô</span></h4>
+        <ul class="bul">
+          <li>Tài sản A: 100 triệu/tháng — ấn tượng</li>
+          <li>Tài sản B: 15 triệu/tháng — khiêm tốn</li>
+          <li>Nhìn vào đây, A "hơn" B rõ ràng</li>
+        </ul>
+      </div>
+      <div class="col after">
+        <h4>Gross Yield <span class="tag">Hiệu quả</span></h4>
+        <ul class="bul">
+          <li>Tài sản A: 2,4%/năm — dưới lạm phát</li>
+          <li>Tài sản B: 6,0%/năm — gấp 2,5 lần A</li>
+          <li>Đổi góc nhìn, B "hơn" A rõ ràng</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <table class="tbl">
+      <thead><tr><th>Tài sản</th><th>Tiền thuê/tháng</th><th>Giá vốn</th><th>Gross Yield</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A</strong></td><td>100 triệu</td><td>50 tỷ</td><td>2,4%</td></tr>
+        <tr><td><strong>B</strong></td><td>15 triệu</td><td>3 tỷ</td><td>6,0%</td></tr>
+      </tbody>
+    </table>
+
+    <!-- CALLOUT — info box -->
+    <div class="callout warn">
+      <h4>⚠️ Đừng nhầm lẫn quy mô với hiệu quả</h4>
+      <p>Tài sản có dòng tiền lớn (tuyệt đối) chưa chắc đã có lợi suất tốt (tương đối). Quyết định đầu tư dựa trên <strong>yield</strong>, không dựa trên số tiền thuê hàng tháng.</p>
+    </div>
+
+    <!-- TIMELINE -->
+    <h3>Tiến trình phát triển</h3>
+    <div class="timeline">
+      <div class="tl-item green"><div class="tl-year">2020</div><div class="tl-body">Giai đoạn khởi đầu — yield cao, vốn thấp.</div></div>
+      <div class="tl-item amber"><div class="tl-year">2023</div><div class="tl-body">Yield giảm dần do giá tăng nhanh hơn tiền thuê.</div></div>
+      <div class="tl-item red"><div class="tl-year">2025</div><div class="tl-body">Nhiều dự án yield dưới 2% — dưới lạm phát.</div></div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION MẪU 2: Tài liệu tham khảo (numerated refs) ===== -->
+  <section id="tai-lieu-tham-khao">
+    <h2 class="section-title"><span class="num">📚</span>Tài liệu tham khảo</h2>
+    <p>Danh sách nguồn số liệu và phương pháp luận viện dẫn trong báo cáo. Các tham chiếu <sup class="ref">1</sup>, <sup class="ref">4</sup>, <sup class="ref">12</sup> xuất hiện trong nội dung trỏ về danh sách này.</p>
+
+    <h3>I. Số liệu thị trường</h3>
+    <ol class="refs">
+      <li>
+        <div>
+          <strong>{{SRC_1_AUTHOR}}</strong> — "{{SRC_1_TITLE}}" ({{SRC_1_DATE}})
+          <a href="{{SRC_1_URL}}" target="_blank" rel="noopener">{{SRC_1_DOMAIN}}</a>
+          <span class="src-meta">{{SRC_1_META}}</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>{{SRC_2_AUTHOR}}</strong> — "{{SRC_2_TITLE}}" ({{SRC_2_DATE}})
+          <a href="{{SRC_2_URL}}" target="_blank" rel="noopener">{{SRC_2_DOMAIN}}</a>
+          <span class="src-meta">{{SRC_2_META}}</span>
+        </div>
+      </li>
+    </ol>
+
+    <!-- Pattern ol start="N" để chia nhóm tham chiếu tiếp tục đánh số -->
+    <h3>II. Lý thuyết &amp; phương pháp luận</h3>
+    <ol class="refs" start="3">
+      <li>
+        <div>
+          <strong>{{SRC_3_AUTHOR}}</strong> — <em>{{SRC_3_TITLE}}</em>
+          <span class="src-meta">{{SRC_3_META}}</span>
+        </div>
+      </li>
+    </ol>
+
+    <div class="callout info">
+      <h4>💡 Bản chất của báo cáo</h4>
+      <p>Đây là <strong>ghi chép tự nghiên cứu</strong>, không phải tài liệu học thuật chuẩn mực hay khuyến nghị đầu tư. Mục tiêu là minh bạch hóa cơ chế để người đọc tự đánh giá. Nếu có sai sót về số liệu, vui lòng phản hồi.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================ MINIMAP (floating TOC) ============================ -->
+<!-- Đồng bộ: mỗi <a href="#id"> phải khớp với id của một <section>. Chia group theo chủ đề. -->
+<aside class="minimap" id="minimap" aria-label="Mục lục điều hướng">
+  <div class="mm-head">
+    <span class="mm-title">Mục lục</span>
+    <span class="mm-pct" id="mmPct">0%</span>
+  </div>
+  <div class="mm-search">
+    <input type="text" id="mmSearch" placeholder="Lọc mục lục..." autocomplete="off">
+  </div>
+  <button class="mm-overlay-close" id="mmClose" aria-label="Đóng">✕</button>
+  <div class="mm-group open" data-group="b">
+    <button class="mm-group-head"><span class="chev">▶</span> Mở đầu <span class="gcount">1</span></button>
+    <ul class="mm-items">
+      <li><a href="#chuong-1"><span class="dot"></span>I — {{SECTION_1_SHORT}}</a></li>
+    </ul>
+  </div>
+  <div class="mm-group open" data-group="n">
+    <button class="mm-group-head"><span class="chev">▶</span> Kết <span class="gcount">1</span></button>
+    <ul class="mm-items">
+      <li><a href="#tai-lieu-tham-khao"><span class="dot"></span>📚 Tài liệu tham khảo</a></li>
+    </ul>
+  </div>
+  <div class="mm-no-result" id="mmNoResult">Không tìm thấy mục nào.</div>
+</aside>
+
+<button class="mm-fab" id="mmFab" aria-label="Mở mục lục">☰</button>
+<button class="to-top" id="toTop" aria-label="Lên đầu trang">↑</button>
+<button class="pres-btn" id="presBtn" aria-label="Trình chiếu" title="Trình chiếu">📽️</button>
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="pres-overlay" id="presOverlay" aria-hidden="true">
+  <div class="pres-top">
+    <div class="pres-progress-bg"><div class="pres-progress-fill" id="presProgress"></div></div>
+    <div class="pres-counter"><b id="presCurrent">1</b> / <span id="presTotal">3</span></div>
+    <button class="pres-exit" id="presExit">✕ Thoát (ESC)</button>
+  </div>
+  <div class="pres-stage" id="presStage"></div>
+  <div class="pres-hint">← → để chuyển slide · ESC để thoát</div>
+  <div class="pres-bottom">
+    <button class="pres-nav" id="presPrev" aria-label="Slide trước">←</button>
+    <div class="pres-dots" id="presDots"></div>
+    <button class="pres-nav" id="presNext" aria-label="Slide sau">→</button>
+  </div>
+</div>
+
+<footer>
+  {{FOOTER_TITLE}}<br>
+  Dựng bởi ZCode · Cập nhật {{UPDATE_DATE}}
+</footer>
+
+<!-- ============================ SCRIPT 1: CHARTS ============================ -->
+<!-- Chart.js setup chuẩn + sample chart. Thêm new Chart cho mỗi canvas. -->
+<!-- Recipe đầy đủ (bar/line/radar/mixed) trong references/chart_recipes.md -->
+<!-- NOTE: longform dùng slate palette riêng (design system khác fintech) — KHÔNG dùng _viz-shared.
+     Nhưng vẫn dùng viz.chart() registry (pattern "chart as plugin") cho DRY chart config. -->
+<!-- ===== VIZ.JS (inlined từ _viz-shared/ by inject.py) ===== -->
+<script>
+/* =========================================================================
+   VIZ.JS — Chart component registry + Candlestick renderer + Navigation
+   Pattern cốt lõi (học từ Metabase): "chart as plugin".
+   Trước đây: mỗi template có 7+ lệnh `new Chart(...)` riêng, lặp đi lặp lại
+   các config legend/grid/dualAxis. Giờ: registry với base config merge.
+
+   API:
+     viz.chart(canvasId, { type, datasets, scales?, plugins? })
+     viz.renderCandlestick(canvasEl, { candles, volumes, ma20, ma50, high52w, low52w, months })
+     viz.setupNav({ linksSelector, sections?, progressId?, backTopId? })
+     viz.gradient(ctx, c1, c2)              // helper tiện ích
+     viz.neon(c1, c2)                        // helper gradient cho bar fill
+   ========================================================================= */
+(function (global) {
+  'use strict';
+
+  const viz = {};
+
+  /* ---------------------------------------------------------------------
+     Chart.defaults — setup một lần (trước đây lặp 5 lần trong 5 templates)
+     Lấy màu từ CSS custom properties → tự đổi theo data-theme.
+     --------------------------------------------------------------------- */
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function readChartColors() {
+    const styles = getComputedStyle(document.documentElement);
+    return {
+      primary:   cssVar('--chart-primary')   || '#a855f7',
+      secondary: cssVar('--chart-secondary') || '#ec4899',
+      tertiary:  cssVar('--chart-tertiary')  || '#06b6d4',
+      pos:       cssVar('--chart-pos')       || '#10d98a',
+      neg:       cssVar('--chart-neg')       || '#ff4d6d',
+      neutral:   cssVar('--chart-neutral')   || '#fbbf24',
+      grid:      cssVar('--chart-grid')      || 'rgba(139,92,246,0.06)',
+      text:      cssVar('--chart-text')      || '#8b8ba7',
+      fontFamily: cssVar('--font-sans')      || 'Inter, sans-serif',
+    };
+  }
+  let CHART_COLORS = readChartColors();
+  function applyChartDefaults() {
+    if (!global.Chart) return;
+    CHART_COLORS = readChartColors();
+    Chart.defaults.color = CHART_COLORS.text;
+    Chart.defaults.font.family = CHART_COLORS.fontFamily;
+    Chart.defaults.borderColor = CHART_COLORS.grid;
+  }
+  applyChartDefaults();
+  // Re-apply khi theme đổi (nếu user swap data-theme sau render)
+  viz.refreshTheme = applyChartDefaults;
+
+  /* ---------------------------------------------------------------------
+     Gradient helper (trước đây lặp ở mỗi template)
+     --------------------------------------------------------------------- */
+  viz.gradient = function (ctx, c1, c2) {
+    const chartArea = ctx.chart.chartArea;
+    const top = chartArea ? chartArea.top : 0;
+    const bottom = chartArea ? chartArea.bottom : 280;
+    const g = ctx.chart.ctx.createLinearGradient(0, top, 0, bottom);
+    g.addColorStop(0, c1);
+    g.addColorStop(1, c2);
+    return g;
+  };
+
+  /* ---------------------------------------------------------------------
+     CHART REGISTRY — "chart as plugin" pattern
+     Base options hợp nhất tự động → không còn lặp legend/grid/dualAxis.
+     --------------------------------------------------------------------- */
+  const SCALE_BASE = { grid: { color: CHART_COLORS.grid } };
+  const LEGEND_BASE = {
+    position: 'top', align: 'end',
+    labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } },
+  };
+
+  function deepMerge(base, override) {
+    // Shallow-ish merge đủ cho config Chart.js (2 cấp).
+    const out = Array.isArray(base) ? base.slice() : Object.assign({}, base);
+    if (!override) return out;
+    for (const k of Object.keys(override)) {
+      const bv = base[k], ov = override[k];
+      if (bv && typeof bv === 'object' && !Array.isArray(bv) && ov && typeof ov === 'object') {
+        out[k] = Object.assign({}, bv, ov);
+      } else {
+        out[k] = ov;
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Vẽ một chart từ registry. Base options (responsive, legend, grid) tự thêm.
+   * @param {string} canvasId - id thẻ <canvas>
+   * @param {object} spec - { type, data, options?, plugins? }
+   */
+  viz.chart = function (canvasId, spec) {
+    if (!global.Chart) { console.warn('Chart.js chưa load'); return null; }
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) { console.warn('canvas không tìm thấy:', canvasId); return null; }
+
+    const baseOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: LEGEND_BASE },
+    };
+
+    const opts = deepMerge(baseOptions, spec.options || {});
+    // Đảm bảo scales có grid color mặc định nếu user không override
+    if (opts.scales) {
+      for (const k of Object.keys(opts.scales)) {
+        opts.scales[k] = deepMerge({ grid: { color: CHART_COLORS.grid } }, opts.scales[k]);
+      }
+    }
+
+    return new Chart(canvas, {
+      type: spec.type,
+      data: spec.data,
+      options: opts,
+      plugins: spec.plugins || [],
+    });
+  };
+
+  /* ---------------------------------------------------------------------
+     CANDLESTICK RENDERER — custom Canvas 2D
+     Trước đây: ~100 dòng này lặp 2 lần (technical + profile templates).
+     Giờ: 1 hàm tái dùng. DPR-aware, resize-aware.
+     @param {HTMLCanvasElement} canvas
+     @param {object} data:
+       candles: [{o,h,l,c}]      (giá nghìn đồng)
+       volumes: number[]          (triệu CP)  — optional
+       ma20: number[]             (null cho warmup)
+       ma50: number[]
+       high52w: number
+       low52w: number
+       months: string[]           (nhãn trục X, vd ['7/25','8/25',...])
+       priceUnit?: 'K' | ''       (mặc định 'K' → chia 1000 khi hiển thị)
+     --------------------------------------------------------------------- */
+  viz.renderCandlestick = function (canvas, data) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const candles = data.candles || [];
+    if (!candles.length) return;
+    const volumes = data.volumes || [];
+    const ma20 = data.ma20 || [];
+    const ma50 = data.ma50 || [];
+    const high52w = data.high52w;
+    const low52w = data.low52w;
+    const months = data.months || [];
+    const unit = data.priceUnit || 'K'; // 'K' → giá nghìn đồng hiển thị /1000
+    const div = unit === 'K' ? 1000 : 1;
+
+    function draw() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const W = Math.max(100, rect.width);
+      const H = Math.max(100, rect.height);
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      const priceH = H * 0.65, volH = volumes.length ? H * 0.25 : 0, gap = H * 0.05;
+      const volY = priceH + gap;
+      const padLeft = 50, padRight = 20, padTop = 10, padBot = 20;
+      const chartW = W - padLeft - padRight;
+      const priceTop = padTop, priceBot = priceH - padBot;
+      const volTop = volY + 10, volBot = volY + volH;
+
+      let pMin = Infinity, pMax = -Infinity;
+      candles.forEach(c => { pMin = Math.min(pMin, c.l); pMax = Math.max(pMax, c.h); });
+      const pPad = (pMax - pMin) * 0.05;
+      pMin -= pPad; pMax += pPad;
+      const priceToY = p => priceTop + (priceBot - priceTop) * (pMax - p) / (pMax - pMin);
+
+      const n = candles.length;
+      const candleW = Math.max(3, chartW / n * 0.7);
+      const xStep = chartW / n;
+      const idxToX = i => padLeft + xStep * (i + 0.5);
+
+      // Grid + Y labels
+      ctx.strokeStyle = 'rgba(139,92,246,0.08)'; ctx.lineWidth = 1;
+      ctx.fillStyle = '#5a5a72'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'right';
+      for (let g = 0; g <= 5; g++) {
+        const p = pMin + (pMax - pMin) * g / 5;
+        const y = priceToY(p);
+        ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(W - padRight, y); ctx.stroke();
+        ctx.fillText(unit === 'K' ? (p / 1000).toFixed(1) + 'K' : p.toFixed(1), padLeft - 5, y + 3);
+      }
+
+      // MA20 (vàng)
+      if (ma20.length) {
+        ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.5; ctx.beginPath();
+        let started = false;
+        ma20.forEach((v, i) => {
+          if (v === null || v === undefined) return;
+          const x = idxToX(i), y = priceToY(v);
+          if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      }
+      // MA50 (cyan)
+      if (ma50.length) {
+        ctx.strokeStyle = '#06b6d4'; ctx.beginPath(); started = false;
+        ma50.forEach((v, i) => {
+          if (v === null || v === undefined) return;
+          const x = idxToX(i), y = priceToY(v);
+          if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      }
+
+      // Resistance = đỉnh 52 tuần
+      if (high52w != null) {
+        ctx.strokeStyle = 'rgba(255,77,109,0.5)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+        const resY = priceToY(high52w);
+        ctx.beginPath(); ctx.moveTo(padLeft, resY); ctx.lineTo(W - padRight, resY); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,77,109,0.8)'; ctx.textAlign = 'left'; ctx.font = '9px Inter';
+        ctx.fillText('R ' + (high52w / div).toFixed(unit === 'K' ? 1 : 0) + (unit === 'K' ? 'K' : '') + ' (đỉnh 52W)', padLeft + 4, resY - 5);
+      }
+      // Support = đáy 52 tuần
+      if (low52w != null) {
+        ctx.strokeStyle = 'rgba(16,217,138,0.5)';
+        const supY = priceToY(low52w);
+        ctx.beginPath(); ctx.moveTo(padLeft, supY); ctx.lineTo(W - padRight, supY); ctx.stroke();
+        ctx.fillStyle = 'rgba(16,217,138,0.8)';
+        ctx.fillText('S ' + (low52w / div).toFixed(unit === 'K' ? 1 : 0) + (unit === 'K' ? 'K' : '') + ' (đáy 52W)', padLeft + 4, supY + 12);
+        ctx.setLineDash([]);
+      }
+
+      // Candles
+      candles.forEach((c, i) => {
+        const x = idxToX(i);
+        const isUp = c.c >= c.o;
+        const color = isUp ? '#10d98a' : '#ff4d6d';
+        const yHigh = priceToY(c.h), yLow = priceToY(c.l);
+        const yOpen = priceToY(c.o), yClose = priceToY(c.c);
+        const bodyTop = Math.min(yOpen, yClose);
+        const bodyH = Math.max(1, Math.abs(yClose - yOpen));
+        ctx.strokeStyle = color; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x, yHigh); ctx.lineTo(x, yLow); ctx.stroke();
+        ctx.fillStyle = color; ctx.fillRect(x - candleW / 2, bodyTop, candleW, bodyH);
+      });
+
+      // Volume sub-panel
+      if (volumes.length) {
+        const maxVol = Math.max(...volumes.filter(v => v > 0));
+        const volToY = v => volBot - (volBot - volTop) * v / maxVol;
+        ctx.fillStyle = '#5a5a72'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'right';
+        ctx.fillText(maxVol.toFixed(1) + 'M', padLeft - 5, volTop + 3);
+        ctx.fillText('0', padLeft - 5, volBot);
+        ctx.strokeStyle = 'rgba(139,92,246,0.08)';
+        ctx.beginPath(); ctx.moveTo(padLeft, volBot); ctx.lineTo(W - padRight, volBot); ctx.stroke();
+        candles.forEach((c, i) => {
+          const x = idxToX(i);
+          const isUp = c.c >= c.o;
+          const v = volumes[i];
+          if (v <= 0) return;
+          const y = volToY(v);
+          ctx.fillStyle = isUp ? 'rgba(16,217,138,0.5)' : 'rgba(255,77,109,0.5)';
+          ctx.fillRect(x - candleW / 2, y, candleW, volBot - y);
+        });
+      }
+
+      // X labels (tháng)
+      if (months.length) {
+        ctx.fillStyle = '#5a5a72'; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+        const monthStep = Math.ceil(n / months.length);
+        months.forEach((m, i) => {
+          const idx = i * monthStep + 2;
+          if (idx < n) ctx.fillText(m, idxToX(idx), H - 5);
+        });
+      }
+    }
+
+    draw();
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(draw, 100);
+    });
+  };
+
+  /* ---------------------------------------------------------------------
+     NAVIGATION — scrollspy + progress bar + back-to-top
+     Trước đây: lặp 2 lần (technical + profile). Giờ: 1 hàm.
+     Tự phát hiện links vs fallback. Tương thích cả `data-target` (dashboard)
+     và `href="#id"` (profile).
+     --------------------------------------------------------------------- */
+  viz.setupNav = function (opts) {
+    opts = opts || {};
+    const links = Array.from(document.querySelectorAll(opts.linksSelector || '.topnav-link, nav a[href^="#"]'));
+    if (!links.length) return;
+
+    const progress = opts.progressId ? document.getElementById(opts.progressId) : document.getElementById('progressBar');
+    const backTop = opts.backTopId ? document.getElementById(opts.backTopId) : document.getElementById('backTop');
+    // Giải section target cho mỗi link (data-target hoặc href)
+    const sections = links.map(link => {
+      const sel = link.dataset.target ? '#' + link.dataset.target : link.getAttribute('href');
+      return { link: link, el: sel ? document.querySelector(sel) : null };
+    }).filter(s => s.el);
+
+    function onScroll() {
+      const sc = window.scrollY + 120;
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      if (progress) progress.style.width = (docH > 0 ? (window.scrollY / docH) * 100 : 0) + '%';
+      if (backTop) backTop.classList.toggle('visible', window.scrollY > 600);
+
+      let current = sections[0];
+      for (let i = sections.length - 1; i >= 0; i--) {
+        if (sections[i].el.getBoundingClientRect().top + window.scrollY - 120 <= sc) {
+          current = sections[i]; break;
+        }
+      }
+      links.forEach(l => l.classList.remove('active'));
+      if (current) {
+        current.link.classList.add('active');
+        // Scroll nav để link active vào view
+        const navInner = current.link.closest('.topnav-inner');
+        if (navInner) {
+          const linkRect = current.link.getBoundingClientRect();
+          const navRect = navInner.getBoundingClientRect();
+          if (linkRect.left < navRect.left + 50 || linkRect.right > navRect.right - 50) {
+            navInner.scrollTo({
+              left: current.link.offsetLeft - navInner.offsetWidth / 2 + current.link.offsetWidth / 2,
+              behavior: 'smooth',
+            });
+          }
+        }
+      }
+    }
+
+    links.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const sel = link.dataset.target ? '#' + link.dataset.target : link.getAttribute('href');
+        const target = sel ? document.querySelector(sel) : null;
+        if (target) {
+          const navH = (document.querySelector('.topnav') || {}).offsetHeight || 0;
+          const top = target.getBoundingClientRect().top + window.scrollY - navH - 8;
+          window.scrollTo({ top: top, behavior: 'smooth' });
+        }
+      });
+    });
+
+    if (backTop) {
+      backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  };
+
+  global.viz = viz;
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+/* Slate palette overrides cho registry (registry đọc --chart-* tokens; longform dùng slate). */
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.font.family = '-apple-system, Segoe UI, Roboto, sans-serif';
+Chart.defaults.borderColor = '#334155';
+
+viz.chart('chartCompare', {
+  type: 'bar',
+  data: { labels: ['Tiền thuê/tháng (tr triệu)', 'Giá vốn (tỷ)', 'Gross Yield (%/năm)'],
+    datasets: [
+      { label: 'Tài sản A', data: [100, 50, 2.4],
+        backgroundColor: 'rgba(239,68,68,.7)', borderRadius: 5 },
+      { label: 'Tài sản B', data: [15, 3, 6.0],
+        backgroundColor: 'rgba(34,197,94,.7)', borderRadius: 5 }
+    ]
+  },
+  options: {
+    plugins: { legend: { display: true, position: 'top', labels: { color: '#e2e8f0', font: { size: 11 } } },
+      tooltip: { callbacks: { label: function (c) { return c.dataset.label + ': ' + c.parsed.y; } } } },
+    scales: { y: { beginAtZero: true, grid: { color: '#334155' } },
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } } }
+  }
+});
+</script>
+
+<!-- ============================ SCRIPT 2: NAVIGATION + PRESENTATION ============================ -->
+<!-- Generic — không hardcode. Hoạt động với bất kỳ số section/group nào. -->
+<!-- Xem references/navigation.md cho chi tiết scrollspy/search/group toggle/presentation. -->
+<script>
+/* ============ NAVIGATION LOGIC ============ */
+(function(){
+  const body = document.body;
+  const minimap = document.getElementById('minimap');
+  const fab = document.getElementById('mmFab');
+  const closeBtn = document.getElementById('mmClose');
+  const toTop = document.getElementById('toTop');
+  const progressBar = document.getElementById('progressBar');
+  const mmPct = document.getElementById('mmPct');
+  const search = document.getElementById('mmSearch');
+  const noResult = document.getElementById('mmNoResult');
+  const groups = Array.from(document.querySelectorAll('.mm-group'));
+  const allLinks = Array.from(document.querySelectorAll('.mm-items a'));
+  const sections = allLinks.map(a => {
+    const id = a.getAttribute('href').slice(1);
+    return { link: a, section: document.getElementById(id), id };
+  }).filter(x => x.section);
+
+  setTimeout(() => document.body.classList.add('loaded'), 800);
+
+  function openGroupContaining(link){
+    const grp = link.closest('.mm-group');
+    if (grp && !grp.classList.contains('open')) grp.classList.add('open');
+  }
+
+  // Scroll spy
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting){
+        const id = entry.target.id;
+        const found = sections.find(s => s.id === id);
+        if (found){
+          sections.forEach(s => s.link.classList.remove('active'));
+          found.link.classList.add('active');
+          openGroupContaining(found.link);
+        }
+      }
+    });
+  }, { rootMargin:'-90px 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s.section));
+
+  // Progress + show buttons
+  function onScroll(){
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = Math.min(100, Math.max(0, (window.scrollY / h) * 100));
+    progressBar.style.width = pct + '%';
+    mmPct.textContent = Math.round(pct) + '%';
+    if (window.scrollY > 400){
+      body.classList.add('nav-active');
+      toTop.classList.add('show');
+    } else {
+      body.classList.remove('nav-active');
+      toTop.classList.remove('show');
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive:true });
+  onScroll();
+
+  toTop.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
+
+  groups.forEach(g => {
+    const head = g.querySelector('.mm-group-head');
+    head.addEventListener('click', () => g.classList.toggle('open'));
+  });
+
+  search.addEventListener('input', () => {
+    const q = search.value.trim().toLowerCase();
+    minimap.classList.toggle('searching', !!q);
+    let anyVisible = false;
+    allLinks.forEach(a => {
+      const text = a.textContent.toLowerCase();
+      const match = !q || text.includes(q);
+      a.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+      if (match && q) openGroupContaining(a);
+    });
+    noResult.classList.toggle('show', !anyVisible);
+  });
+
+  fab.addEventListener('click', () => body.classList.add('nav-mobile-open'));
+  closeBtn.addEventListener('click', () => body.classList.remove('nav-mobile-open'));
+
+  allLinks.forEach(a => {
+    a.addEventListener('click', () => {
+      if (window.innerWidth < 1024) body.classList.remove('nav-mobile-open');
+    });
+  });
+})();
+
+/* ============ PRESENTATION MODE ============ */
+// SLIDES: định nghĩa thủ công mỗi slide. Verify SLIDES.length ≈ số section chính.
+// type: 'title' | 'section' | 'list' | 'quote'
+(function(){
+  const presBtn = document.getElementById('presBtn');
+  const overlay = document.getElementById('presOverlay');
+  const exitBtn = document.getElementById('presExit');
+  const prevBtn = document.getElementById('presPrev');
+  const nextBtn = document.getElementById('presNext');
+  const stage = document.getElementById('presStage');
+  const dotsBox = document.getElementById('presDots');
+  const progressFill = document.getElementById('presProgress');
+  const currentEl = document.getElementById('presCurrent');
+  const totalEl = document.getElementById('presTotal');
+  if (!presBtn || !overlay) return;
+
+  const SLIDES = [
+    { type:'title', badge:'{{BADGE}}',
+      title:'{{HERO_TITLE}}',
+      sub:'{{HERO_SUB}}',
+      meta:'Cập nhật {{UPDATE_DATE}} · {{META_CHAPTERS}}' },
+    { type:'section', num:'I', label:'Chương 1', title:'{{SECTION_1_TITLE}}' },
+    { type:'quote', q:'"{{HERO_TITLE}}"',
+      source:'Kết luận — thay bằng câu chốt của bạn' }
+  ];
+
+  let current = 0;
+  let built = false;
+  let slideEls = [];
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+  function renderSlide(sl, idx){
+    const cls = 'slide-' + sl.type;
+    let inner = '';
+    if (sl.type === 'title'){
+      inner = '<div class="slide-inner"><span class="badge">'+esc(sl.badge)+'</span><h1>'+esc(sl.title)+'</h1><p class="sub">'+esc(sl.sub)+'</p><p class="sub" style="color:#94a3b8;font-size:.9rem;margin-top:18px">'+esc(sl.meta)+'</p></div>';
+    } else if (sl.type === 'section'){
+      inner = '<div class="slide-inner"><div class="sec-num">'+esc(sl.num)+'</div><div class="sec-label">'+esc(sl.label)+'</div><h2>'+esc(sl.title)+'</h2></div>';
+    } else if (sl.type === 'list'){
+      const items = sl.items.map(function(it,i){ return '<li><span class="num">'+(i+1)+'</span><span class="txt">'+it.t+'</span></li>'; }).join('');
+      inner = '<div class="slide-inner slide-content"><div class="kicker">'+esc(sl.kicker)+'</div><h2>'+esc(sl.title)+'</h2><ul>'+items+'</ul></div>';
+    } else if (sl.type === 'quote'){
+      inner = '<div class="slide-inner"><div class="qmark">"</div><p class="qtext">'+esc(sl.q)+'</p><p class="qsource">'+esc(sl.source)+'</p></div>';
+    }
+    return '<div class="pres-slide '+cls+(idx===0?' active':'')+'" data-idx="'+idx+'">'+inner+'</div>';
+  }
+
+  function build(){
+    if (built) return;
+    built = true;
+    stage.innerHTML = SLIDES.map(function(sl,i){ return renderSlide(sl,i); }).join('');
+    slideEls = Array.from(stage.children);
+    totalEl.textContent = SLIDES.length;
+    SLIDES.forEach(function(_, i){
+      const d = document.createElement('button');
+      d.className = 'pres-dot' + (i===0?' active':'');
+      d.setAttribute('aria-label','Slide '+(i+1));
+      d.addEventListener('click', function(){ goTo(i); });
+      dotsBox.appendChild(d);
+    });
+  }
+
+  function updateUI(){
+    progressFill.style.width = ((current+1)/SLIDES.length*100)+'%';
+    currentEl.textContent = current+1;
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === SLIDES.length-1;
+    Array.from(dotsBox.children).forEach(function(d,i){ d.classList.toggle('active', i===current); });
+  }
+  function goTo(idx){
+    if (idx < 0 || idx >= SLIDES.length || idx === current) return;
+    const dir = idx > current ? 'forward' : 'back';
+    const old = slideEls[current];
+    const nw = slideEls[idx];
+    old.classList.remove('active');
+    if (dir === 'forward') old.classList.add('prev'); else old.classList.remove('prev');
+    nw.classList.remove('prev');
+    void nw.offsetWidth;
+    nw.classList.add('active');
+    current = idx;
+    updateUI();
+  }
+  function open(){ build(); overlay.classList.add('active'); overlay.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; current=0; updateUI(); }
+  function close(){ overlay.classList.remove('active'); overlay.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+
+  presBtn.addEventListener('click', open);
+  exitBtn.addEventListener('click', close);
+  prevBtn.addEventListener('click', function(){ goTo(current-1); });
+  nextBtn.addEventListener('click', function(){ goTo(current+1); });
+  document.addEventListener('keydown', function(e){
+    if (!overlay.classList.contains('active')) return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'){ e.preventDefault(); goTo(current+1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp'){ e.preventDefault(); goTo(current-1); }
+    else if (e.key === 'Escape'){ close(); }
+    else if (e.key === 'Home'){ goTo(0); }
+    else if (e.key === 'End'){ goTo(SLIDES.length-1); }
+  });
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) close(); });
+})();
+</script>
+</body>
+</html>

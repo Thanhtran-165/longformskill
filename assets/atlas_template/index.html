@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  LONGFORM ATLAS — Interactive Research Atlas Template (kickoff tối thiểu)
+  ============================================================================
+  Skill: longform (mode atlas)
+  Source pattern: china-ai-industrial-atlas + global-ai-industry-atlas
+
+  CÁCH DÙNG:
+  1. Copy thư mục này vào {project}/{slug}/
+     cp -r "$SKILL_DIR/assets/atlas_template/"* {project}/{slug}/
+  2. Replace {{ATLAS_TITLE}} / {{ATLAS_TITLE_SHORT}} / {{ATLAS_DATE}}
+     trong CẢ index.html VÀ app.js (renderHome có 2 chỗ dùng token).
+  3. Tạo data/ — xem references/atlas_data_schema.md cho schema 13 file
+  4. Sửa ROUTES trong app.js để thêm view mới
+  5. Verify: node "$SKILL_DIR/scripts/qa_atlas.js" --url=file://{project}/{slug}/index.html
+
+  TEMPLATE BAO GỒM:
+  - SPA shell CSS Grid (rail + topnav + main) + hash router (shareable URL)
+  - el() DOM hyperscript builder + Promise.all data loader
+  - renderRoute dispose-first (cleanup chart/cy trước khi render view mới)
+  - 2 view mẫu: renderHome + renderExplorer
+  - chartContainer wrapper + chartWrapper(title, takeaway, svg, source, confidence)
+  - Dark/light parity qua [data-theme] + localStorage
+
+  MỞ RỘNG THEO CẦU (xem references/atlas_*.md):
+  - Thêm view: thêm entry ROUTES + hàm render<View>(root, param)
+  - Thêm chart: dùng chartWrapper() cho mọi visualization (bắt buộc 4 thành phần)
+  - Thêm data: thêm file data/<key>.json + entry trong loadFiles() + state.data[<key>]
+  - Custom SVG: dùng el('div', {html: svgString}) — xem atlas_charts.md §3 (4 pattern)
+  ============================================================================
+-->
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ATLAS_TITLE}}</title>
+<!-- Chart libs (CDN) — đổi sang local nếu cần offline -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- RAIL: TOC bên trái (CSS Grid area: rail) -->
+  <aside class="rail" aria-label="Điều hướng atlas">
+    <div class="rail-head">
+      <span class="rail-title">{{ATLAS_TITLE_SHORT}}</span>
+      <span class="rail-sub">v1.0 · {{ATLAS_DATE}}</span>
+    </div>
+    <nav class="rail-nav" id="railNav">
+      <!-- Links được sinh động qua JS (wireNav) — dùng data-nav attribute -->
+      <!-- Pattern: <a href="#/route" data-nav="route">Label</a> -->
+    </nav>
+    <div class="rail-foot">
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Đổi giao diện sáng/tối">
+        <span class="theme-icon">🌓</span>
+        <span class="theme-label">Đổi giao diện</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- TOPNAV: breadcrumb + global search (CSS Grid area: topnav) -->
+  <header class="topnav">
+    <div class="topnav-breadcrumb">
+      <span class="bc-home">{{ATLAS_TITLE_SHORT}}</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current" id="bcCurrent">Trang chính</span>
+    </div>
+    <div class="topnav-search">
+      <input type="text" id="globalSearch" placeholder="Tìm theo từ khóa..." autocomplete="off">
+      <span class="search-hint">Nhấn / để focus</span>
+    </div>
+  </header>
+
+  <!-- MAIN: render target (CSS Grid area: main) -->
+  <main id="main" class="main" role="main">
+    <!-- renderRoute() sẽ ghi innerHTML tại đây -->
+    <div class="loading">Đang tải dữ liệu…</div>
+  </main>
+
+  <!-- FOOTER: KPI tổng quan + source count -->
+  <footer class="footer">
+    <span class="foot-kpi" id="footKpi">— entities · — sources</span>
+    <span class="foot-meta">Self-contained research atlas · Mọi số liệu kèm source ID + confidence tier</span>
+  </footer>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

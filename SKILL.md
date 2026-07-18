@@ -1,9 +1,30 @@
 ---
 name: longform
-description: Báo cáo tự nghiên cứu dạng article HTML dài (15-40 chương, Chart.js + minimap + chế độ trình chiếu) tổng hợp từ 5 mẫu thực tế (bdong-tien, ttck-trung-quoc, bao-cao-bds-trung-quoc, giao-duc-trung-quoc, boom-tien-vixomo). Use khi người dùng yêu cầu "viết bài research dài", "báo cáo article", "longform", "longform report", "tự nghiên cứu chuyên sâu", "phân tích nhiều chương", "báo cáo dạng article", hoặc khi cần bài dài nhiều chương với dark theme + chart + mục lục + trình chiếu. Cốt lõi = template HTML self-contained (CORE components + Chart.js + nav kit + refs) + workflow 5 bước + QA Playwright. (Alias: /longform-report)
+description: Báo cáo tự nghiên cứu dạng HTML với 2 MODE — article (15-40 chương, Chart.js + minimap + trình chiếu) hoặc atlas (SPA interactive có router + data JSON tách rời + multi-chart: ECharts/Cytoscape/SVG). Article tổng hợp từ 5 mẫu thực tế (bdong-tien, ttck-trung-quoc, bao-cao-bds-trung-quoc, giao-duc-trung-quoc, boom-tien-vixomo). Atlas rút từ china-ai-industrial-atlas + global-ai-industry-atlas. Use khi người dùng yêu cầu "viết bài research dài", "báo cáo article", "longform", "longform report", "tự nghiên cứu chuyên sâu", "phân tích nhiều chương", "atlas", "dashboard research", "bản đồ ngành", hoặc khi cần dark theme + chart + mục lục + trình chiếu (article) HOẶC interactive atlas có nhiều view (atlas). Cốt lõi = template HTML + workflow 7 bước + QA Playwright cho article; template SPA + workflow 7 bước (A1-A7) + validate data + build self-contained cho atlas. (Alias: /longform-report)
 ---
 
-# Longform Report
+# Longform Report — 2 mode
+
+Skill tạo **báo cáo tự nghiên cứu HTML** với **2 mode** tùy theo nhu cầu:
+
+| Mode | Khi nào | Tech | Output |
+|------|---------|------|--------|
+| **article** (mặc định) | Bài tư duy dài 15-40 chương, đọc tuần tự | Chart.js + minimap TOC + trình chiếu | 1 file HTML self-contained |
+| **atlas** (mới) | Interactive research atlas/dashboard, nhiều view, multi-chart, data tách rời | SPA + hash router + ECharts/Cytoscape/SVG + JSON data | SPA + data/ + dist/ build self-contained |
+
+## ⚠️ Chọn mode NGAY khi bắt đầu
+
+**Câu hỏi quyết định:**
+- User muốn "bài dài nhiều chương có đồ thị xen kẽ" → **article**
+- User muốn "dashboard/atlas có nhiều view, click đổi trang, data nhiều bảng quan hệ" → **atlas**
+- User dùng từ "atlas", "dashboard", "bản đồ ngành", "interactive research" → **atlas**
+- User dùng từ "bài research", "báo cáo", "phân tích chương" → **article**
+
+**Nếu chọn atlas** → bỏ qua Bước 2-4 article, thay bằng **Workflow Atlas** (Bước A1-A7 ở cuối SKILL). Các Bước 5 (fact-check), 5b (lý thuyết), 5c (dịch), 6 (QA), 7 (verify) **vẫn áp dụng** cho cả 2 mode.
+
+---
+
+# Mode ARTICLE (mặc định)
 
 Báo cáo tự nghiên cứu dạng **article HTML dài** — 15-40 chương, dark theme slate-900, Chart.js charts, minimap TOC, progress bar, và chế độ trình chiếu (slideshow). Tổng hợp pattern từ 5 báo cáo thực tế đã làm, tái sử dụng được cho **bất kỳ chủ đề nào** (tài chính VN, kinh tế Trung Quốc, giáo dục, xã hội...).
 
@@ -551,6 +572,216 @@ grep -c '<section ' {project}/{slug}/index.html        # số section
 
 > ⚠️ **Nguyên tắc**: Dịch sai ngay từ đầu tốn 1 lần sửa. Dịch vội rồi phát hiện muộn tốn 3 lần (sửa + rebuild + re-deploy + mất niềm tin user). **Luôn Bước 0 trước.**
 
+---
+
+# Mode ATLAS
+
+> ⚠️ Đọc trước: `references/atlas_architecture.md` (SPA pattern) + `references/atlas_data_schema.md` (13 file schema) + `references/atlas_charts.md` (ECharts/Cytoscape/SVG builders) + `references/atlas_build_pipeline.md` (build self-contained).
+>
+> Mẫu tham chiếu thực tế: `china-ai-industrial-atlas/` (8 view, custom SVG, glassmorphism navy+gold) + `global-ai-industry-atlas/` (13 module, D3-like SVG tự viết, dark/light parity, build pipeline).
+
+## Workflow Atlas (mode atlas)
+
+### Bước A1: Chốt schema data + view (BẮT BUỘC)
+
+Trước khi code: chốt 2 thứ (xem `references/atlas_data_schema.md`):
+
+1. **Danh sách JSON file** + schema mỗi file. Tối thiểu `segments, companies, sources`. Đầy đủ 13 file: `segments, companies, companies-tier-b, companies-tier-c, founders, sources, concepts, insights, scenarios, countries, relationships, claims, _summary`.
+2. **Danh sách view (route)** — thường 8-15 view: Home, Value Chain, Companies, Company detail, Founders, Geography, Insights, Charts, Methodology...
+
+```
+User: "Tạo atlas ngành AI Việt Nam"
+  ↓
+Schema data: segments.json (10), companies.json (40), founders.json (15), sources.json (50)
+Views: home, value-chain, companies, company, founders, insights, methodology (7 views)
+Chart libs: ECharts (bar/line) + Cytoscape (founder network) + 1-2 custom SVG (VN map, value chain stack)
+```
+
+### Bước A2: Copy template + setup project
+
+```bash
+# SKILL_DIR = thư mục skill (ZCode: ~/.zcode/skills/longform)
+mkdir -p {project}/{slug}/{data,assets/css,assets/js,dist}
+cp -r "$SKILL_DIR/assets/atlas_template/"* {project}/{slug}/
+```
+
+Template có sẵn (`assets/atlas_template/`): shell SPA CSS Grid 3 vùng (rail + topnav + main) + hash router + `el()` DOM builder + dispose-first renderRoute + 2 view mẫu + chartContainer/chartWrapper + dark/light parity.
+
+### Bước A3: Viết data layer (theo schema)
+
+- Mỗi JSON file bắt đầu bằng `{meta, <plural_key>}` (meta: version, last_updated, count, description).
+- Mỗi entity có `id` + `source_ids[]` — **mỗi số phải có ít nhất 1 source ID** (Pitfall 6 article mode áp dụng cả atlas).
+- Confidence tier 4 mức: Verified/Triangulated/Estimated/Unknown.
+- `tier` field của segment phải thuộc enum chuẩn (không free-form — xem `atlas_data_schema.md` §6).
+- Chạy validate ngay sau khi data xong:
+
+```bash
+node "$SKILL_DIR/scripts/validate_atlas_data.js" {project}/{slug}/data/
+# Exit: 0 = pass, 1 = warning, 2 = fail (5 gate: Data/Source/Content/CrossRef/Coverage)
+```
+
+### Bước A4: Viết views + charts
+
+- Mỗi view = 1 `async function render<View>(root, param)` function, đăng ký trong `ROUTES` map.
+- Pattern layout: `el()` builder + `section(id, title, num, children)` helper + `chartContainer(id, title, takeaway, source, confidence)` cho ECharts hoặc `chartWrapper(...)` cho SVG.
+- Chart **bắt buộc 4 thành phần editorial**: title + takeaway + source + confidence (xem `references/atlas_charts.md` §4).
+- Khi init chart (ECharts/Cytoscape) → push vào `state.activeCharts` / `state._cyInstances` để dispose khi đổi view.
+- **Pitfall 13**: chart library đọc CSS variable runtime, KHÔNG hex cứng (dark/light parity).
+
+### Bước A5: Build self-contained (optional nhưng nên có)
+
+```bash
+node "$SKILL_DIR/scripts/build_atlas.js" {project}/{slug}/
+# → dist/index.html (inline CSS/JS/JSON, chạy được bằng file://)
+```
+
+Xem `references/atlas_build_pipeline.md` cho pattern build (string-replace inlining, JSON nhúng JS literal, regex loadData mỏng).
+
+### Bước A6: QA atlas (BẮT BUỘC)
+
+```bash
+# QA atlas (9 check: JS syntax all files, token, SPA structure, router, chart render, dangling ref, dark/light, console error, screenshots)
+node "$SKILL_DIR/scripts/qa_atlas.js" --url=file://{project}/{slug}/index.html --output=/tmp/qa-shots
+# Exit: 0 = pass, 1 = warnings, 2 = errors.
+```
+
+Check quan trọng:
+1. **JS syntax all files** (app.js + assets/js/*.js) — Pitfall 11: bắt SyntaxError trước runtime.
+2. **Router works** — click 3 route qua `data-nav`, verify `state.currentPage` + hash đổi.
+3. **Chart không empty** — mọi `.chart__body` có content sau render.
+4. **Dangling ref** — gọi `validate_atlas_data.js` tích hợp, FAIL nếu broken.
+5. **Dark/light toggle** — chart phải follow theme (Pitfall 13).
+
+### Bước A7: Verify nội dung + báo cáo trung thực (BẮT BUỘC)
+
+Giống Bước 7 article — KHÔNG đếm/suy đoán bằng đầu, dùng công cụ. **Pitfall 8 áp dụng cho cả 2 mode.**
+
+```bash
+# Đếm số view đã implement
+grep -c "render<View>" {project}/{slug}/app.js
+# Đếm số chart đã có
+grep -c "chartContainer\|chartWrapper" {project}/{slug}/app.js
+# Đếm dangling refs
+node "$SKILL_DIR/scripts/validate_atlas_data.js" {project}/{slug}/data/
+```
+
+---
+
+## Pitfalls atlas (mới — mode atlas)
+
+### Pitfall 11 — ⚠️ Atlas: tin session note quá muộn, không verify bằng công cụ
+
+❌ Session trước để lại note "SyntaxError `app.js:1424` — app không chạy được". Agent session sau tin ngay, mất thời gian fix lỗi không tồn tại. Khi verify bằng `node --check app.js` → **PASS, lỗi đã tự hết** từ phiên trước.
+
+**Trường hợp thực tế đã gặp**: china-ai-industrial-atlas session note ghi SyntaxError `app.js:1424`. Session sau ( nâng cấp skill) đọc note, verify lại → dòng `app.js:1424` hiện tại hoàn toàn hợp lệ (`node --check` PASS). Lỗi đã được fix ở commit giữa 2 session mà không update note.
+
+✅ Trước khi báo "lỗi cũ chưa fix" hoặc bắt đầu fix → **chạy verify bằng công cụ ngay**:
+```bash
+node --check app.js                    # syntax check
+node "$SKILL_DIR/scripts/qa_atlas.js" --url=...  # QA đầy đủ
+```
+
+Note trong session = snapshot thời điểm, có thể đã fix ở commit sau hoặc agent trước đã sửa mà không update note.
+
+### Pitfall 12 — Atlas: router không sync URL (refresh mất page)
+
+❌ SPA router chỉ lưu `state.currentPage` + `main.innerHTML = html` (global-ai-industry-atlas pattern `atlas.js:2100-2125`). Hậu quả:
+- User refresh → mất page, về home.
+- Back/forward button không hoạt động.
+- Không share link tới view cụ thể (`atlas.com/?id=...` vô nghĩa).
+
+✅ Dùng **hash router** (`#/route/param` + `hashchange` listener) — china-ai-industrial-atlas pattern `app.js:202-269`. URL dạng `atlas.com/#/company/DEEPSEEK` shareable, refresh giữ page, back/forward hoạt động.
+
+```js
+// ✅ Hash router
+window.addEventListener('hashchange', renderRoute);
+function navigate(route, param) {
+  location.hash = `#/${route}${param ? '/' + param : ''}`;
+}
+```
+
+Xem `references/atlas_architecture.md` §2 cho recipe đầy đủ.
+
+### Pitfall 13 — Atlas: chart library hex cứng không follow theme
+
+❌ Chart library (`charts.js` hoặc inline trong `app.js`) dùng hex cứng `const ACCENT = '#7a1f2b'` thay vì đọc CSS variable. Dark mode toggle → background đổi nhưng chart vẫn giữ màu light → vỡ parity.
+
+**Trường hợp thực tế**: global-ai-industry-atlas `charts.js:10` dùng hex cứng `ACCENT = '#7a1f2b'` → chart không follow dark mode dù CSS đã parity.
+
+✅ Đọc CSS variable runtime:
+```js
+function getCssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+const accent = getCssVar('--accent-oxblood');
+```
+
+Và khi toggle theme → re-render chart (dispose + init lại để đọc CSS var mới):
+```js
+function toggleTheme() {
+  // ... flip [data-theme] ...
+  state.activeCharts.forEach((c) => { try { c.dispose(); } catch (e) {} });
+  state.activeCharts = [];
+  renderRoute();
+}
+```
+
+Xem `references/atlas_charts.md` §5 cho recipe đầy đủ.
+
+### Pitfall 14 — Atlas: dead code mồ côi + sequential fetch
+
+❌ Hai lỗi phổ biến khi atlas phình to (china-ai-industrial-atlas + global-ai-industry-atlas đều gặp):
+
+1. **Dead code**: function define nhưng không ai gọi. China Atlas có `renderCytoscape()` 73 dòng mồ côi (`app.js:1717-1790`) — agent đã thay bằng `makeCytoscape` wrapper nhưng quên xóa function cũ. Code mồ côi làm khó maintain, dễ gây nhầm lẫn cho agent sau.
+
+2. **Sequential fetch**: `for (const f of files) { await fetch(f) }` thay vì `Promise.all(files.map(f => fetch(f)))` — 9 JSON load nối đuôi, chậm 3-5x không cần thiết. China Atlas `loadData()` `app.js:101-110` mắc lỗi này.
+
+✅ **(1) Sau khi refactor → grep tên function cũ trước khi commit**:
+```bash
+grep -rn "oldFunctionName" .
+# Nếu 0 kết quả ngoài định nghĩa → safe xóa.
+```
+
+**(2) Load data dùng Promise.all**:
+```js
+// ✅ Song song — nhanh hơn 3-5x với 9+ file
+const entries = await Promise.all(
+  DATA_FILES.map(async (key) => {
+    try {
+      const res = await fetch(`data/${key}.json`);
+      return [key, await res.json()];
+    } catch (err) {
+      return [key, { meta: { error: err.message }, [key]: [] }]; // fail mềm
+    }
+  })
+);
+state.data = Object.fromEntries(entries);
+```
+
+Xem `references/atlas_architecture.md` §5 + §6 cho recipe đầy đủ.
+
+### Pitfall 15 — Atlas: dangling references chưa xử lý (chỉ QA log warning)
+
+❌ Cross-reference check (`check-links.js` hoặc `validate_atlas_data.js`) báo nhiều dangling refs (company references không có trong data). Vì cảnh báo là `WARN` (exit 0 hoặc 1) chứ không `FAIL` (exit 2) → agent bỏ qua, deploy với link chết.
+
+**Trường hợp thực tế**: global-ai-industry-atlas có **107 dangling refs** (theo `data/_summary.json`). QA-REPORT.md đã minh bạch liệt kê 4 nhóm (founder → outside scope, acquired/merged companies, AI Mafia chưa thêm, forward references) — nhưng bản thân data chưa xử lý triệt để.
+
+✅ **(1) Xử lý dangling trước khi deploy**: hoặc thêm entity còn thiếu vào data, hoặc xóa reference từ entity cũ.
+
+**(2) Đổi WARN thành FAIL** trong `validate_atlas_data.js` cho dangling > ngưỡng:
+```js
+const DANGLING_THRESHOLD = 20;  // > 20 dangling → FAIL
+if (totalDangling > DANGLING_THRESHOLD) {
+  result.fail.push(`Too many dangling refs: ${totalDangling}`);
+} else if (totalDangling > 0) {
+  result.warn.push(`${totalDangling} dangling (acceptable)`);
+}
+```
+
+**(3) Báo user minh bạch số dangling** trong QA report cuối (Global Atlas đã làm đúng — `QA-REPORT.md:100-104` liệt kê 4 nhóm + giải thích). **Pitfall 8 áp dụng**: không khẳng định "0 dangling" mà không verify.
+
+---
+
 ## Tham khảo
 
 - `assets/article_template.html` — Template CORE ({{TOKEN}} placeholder, hero + 2 section mẫu + minimap + presentation + JS).
@@ -565,6 +796,22 @@ grep -c '<section ' {project}/{slug}/index.html        # số section
 - `references/source_mapping.md` — ⭐ **Bản đồ cấu trúc nguồn**: quy trình lập bản đồ dòng bắt đầu/kết thúc từng chương khi dịch PDF/sách tiếng Anh lớn. Chạy Bước 0 trước khi dịch bất kỳ chương nào. Bỏ qua → mismatch số liệu, glossary không nhất quán, chi phí sửa 3x.
 - `scripts/translation_check.py` — ⭐ **Script hậu kỳ dịch**: quét tự động 8 nhóm lỗi dịch (gloss thiếu, cụm kỳ quặc, dịch máy, câu dài, lặp từ, tag HTML, CJK, idiom không gloss). Exit 0/1/2. Chạy Bước 5c — **lớp lint bổ sung** cho MQM review của skill `vietnamese-document-translation-skill`, không thay thế.
 - `scripts/qa_article.js` — Playwright QA (8 check: token/structure/sections/chart/nav/errors/screenshots).
+
+### Atlas mode (mới)
+
+- `assets/atlas_template/index.html` + `styles.css` + `app.js` — Template SPA kickoff tối thiểu (CSS Grid shell + hash router + `el()` builder + dispose-first + 2 view mẫu + chartContainer/chartWrapper + dark/light parity). Copy vào project rồi mở rộng.
+- `references/atlas_architecture.md` — ⭐ **Pattern SPA + router + state + `el()` + dispose + Promise.all + dark/light parity**. Rút từ china-ai-industrial-atlas + global-ai-industry-atlas. Đọc trước khi mở rộng template.
+- `references/atlas_charts.md` — ⭐ **Recipe visualization**: ECharts (chartContainer wrapper + tooltip style) + Cytoscape (makeCytoscape wrapper + tap delegation) + 4 custom SVG builder (map/hero-stack/lineage/mechanism) + chartWrapper editorial (title+takeaway+source+confidence) + dark mode parity + legend/color scale. Rút từ 2 sản phẩm.
+- `references/atlas_data_schema.md` — ⭐ **Schema 13 file JSON + tier A/B/C + confidence 4 mức + source registry + CHOKEPOINT enum + Claim vs Insight vs Scenario**. Rút chủ yếu từ global-ai-industry-atlas. Đọc trước khi viết data.
+- `references/atlas_build_pipeline.md` — ⭐ **Build self-contained**: build.js (string-replace inlining) + JSON inline pattern (JS literal vs `type="application/json"`) + validate_atlas_data.js 5 gate + check-links.js bidirectional + pitfalls (regex loadData mỏng, double-replace title, dist size).
+- `scripts/qa_atlas.js` — ⭐ **QA atlas** (9 check: JS syntax all files / token / SPA structure / router / chart render / dangling ref / dark/light toggle / console error / screenshots). Mở rộng từ qa_article.js cho SPA. Chạy Bước A6.
+- `scripts/validate_atlas_data.js` — ⭐ **Validate data** 5 gate (Data/Source/Content/CrossRef/Coverage) + dangling ref threshold + tier/confidence enum. Triple state exit (0/1/2). Chạy Bước A3 + A6.
+
+**Mẫu tham chiếu thực tế** (đường dẫn trên máy tác giả):
+- `~/ZCodeProject/china-ai-industrial-atlas/` — 15 routes, custom SVG (bản đồ TQ, hero stack, academic lineage), glassmorphism navy+gold, ECharts + Cytoscape.
+- `~/ZCodeProject/global-ai-industry-atlas/` — 13 modules, D3-like SVG tự viết 12 chart types, dark/light parity, build pipeline self-contained, validate 5 gate.
+
+**Skill phụ thuộc atlas** (load khi cần): kế thừa từ article mode (`vietnamese-document-translation-skill`, `pdf-evidence`). Atlas không thêm dependency mới.
 
 **Skill phụ thuộc (load khi cần)**:
 - `vietnamese-document-translation-skill` (`~/.zcode/skills/vietnamese-document-translation-skill/`) — ⭐ **Động cơ dịch Anh→Việt chính** cho Bước 0 + Bước 5c. Pipeline 7 bước (intake→parsing→glossary→translation→editorial→MQM→post-edit) + adaptive mode decision (production vs train) + termbase 219 thuật ngữ tài chính/vĩ mô/vàng + 6 prompt (intake/glossary/translator/editorial 5 mode/mqm_reviewer 9 nhóm lỗi/post_editor). Khi gặp tài liệu Anh lớn → invoke skill này thay vì dịch ad-hoc.
